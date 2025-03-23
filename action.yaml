@@ -1,0 +1,56 @@
+name: Parallel run
+description: Runs any count of task in parallel
+author: Artemis Kushner
+branding:
+  icon: maximize
+  color: blue
+
+inputs:
+  commands:
+    required: true
+    type: string
+
+runs:
+  using: composite
+  steps:
+    # This is a cross-platform composite action that needs yq.
+    # It's not preinstalled on Windows runners.
+    # See https://github.com/actions/runner-images/issues/7443#issuecomment-1514597691
+    - name: Make yq tool available on Windows runners
+      if: runner.os == 'Windows'
+      run: choco install yq
+      shell: bash
+
+    - name: Run tasks
+      shell: bash
+      run: |
+        set -f
+        set -o pipefail
+
+        pids=()
+        command_name=()
+        errors=()
+
+        # Reading commands
+        while IFS=: read -r COMMAND_NAME COMMAND_CALL; do
+          eval "$COMMAND_CALL" & pids+=($!)
+          command_name+=("$COMMAND_NAME")
+        done < <(echo ${{ inputs.commands }} | yq '.[]')
+
+        # Waiting until all commands finished
+        for i in "${!pids[@]}"; do
+          if ! wait "${pids[$i]}"; then
+            errors+=("${command_name[$i]}")
+          fi
+        done
+
+        # Checks if there are errors
+        if [ ${#errors[@]} -ne 0 ]; then
+          echo "Errors occurred in the following steps:"
+          for error in "${errors[@]}"; do
+            echo " - $error"
+          done
+          exit 1
+        fi
+
+        exit 0
