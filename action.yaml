@@ -38,6 +38,10 @@ runs:
         END
         );
 
+        if ${{ inputs.working-directory != '' }}; then
+          cd ${{ inputs.working-directory }}
+        fi
+
         # Reading commands
         while IFS=: read -r COMMAND_NAME COMMAND_CALL; do
             eval "$COMMAND_CALL" & pids+=($!)
