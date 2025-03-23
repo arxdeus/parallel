@@ -38,10 +38,6 @@ runs:
         END
         );
 
-        if [ ${{ inputs.working-directory != '' }} ]; then
-          cd ${{ inputs.working-directory }}
-        fi
-
         # Reading commands
         while IFS=: read -r COMMAND_NAME COMMAND_CALL; do
             eval "$COMMAND_CALL" & pids+=($!)
@@ -51,7 +47,7 @@ runs:
         # Waiting until all commands finished
         for i in "${!pids[@]}"; do
             if ! wait "${pids[$i]}"; then
-            errors+=("${command_name[$i]}")
+            errors+=($i)
             fi
         done
 
@@ -59,7 +55,7 @@ runs:
         if [ ${#errors[@]} -ne 0 ]; then
             echo "Errors occurred in the following steps:"
             for error in "${errors[@]}"; do
-            echo " - $error"
+            echo " - ${command_name[$error]}"
             done
             exit 1
         fi
