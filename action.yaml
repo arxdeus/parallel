@@ -38,7 +38,7 @@ runs:
         END
         );
 
-        if [ ${{ inputs.working-directory }} != '']; then
+        if [ ${{ inputs.working-directory != '' }} ]; then
           cd ${{ inputs.working-directory }}
         fi
 
