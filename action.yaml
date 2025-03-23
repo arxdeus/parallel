@@ -33,20 +33,20 @@ runs:
         command_name=()
         errors=()
 
-
         INPUT=$(cat <<-END
         ${{ inputs.commands }}
         END
         );
-        PREPARED_INPUT="-${INPUT#*-}";
 
-        cd ${{ inputs.working-directory }}
+        if [ ${{ inputs.working-directory }} != '']; then
+          cd ${{ inputs.working-directory }}
+        fi
 
         # Reading commands
         while IFS=: read -r COMMAND_NAME COMMAND_CALL; do
             eval "$COMMAND_CALL" & pids+=($!)
             command_name+=("$COMMAND_NAME")
-        done < <(echo "$PREPARED_INPUT" | yq '.[]')
+        done < <(echo "$INPUT" | yq '.[]')
 
         # Waiting until all commands finished
         for i in "${!pids[@]}"; do
