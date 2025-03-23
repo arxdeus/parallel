@@ -31,26 +31,34 @@ runs:
         command_name=()
         errors=()
 
+
+        INPUT=$(cat <<-END
+        ${{ inputs.commands }}
+        END
+        );
+        PREPARED_INPUT="-${INPUT#*-}";
+
         # Reading commands
         while IFS=: read -r COMMAND_NAME COMMAND_CALL; do
-          eval "$COMMAND_CALL" & pids+=($!)
-          command_name+=("$COMMAND_NAME")
-        done < <(echo ${{ inputs.commands }} | yq '.[]')
+            eval "$COMMAND_CALL" & pids+=($!)
+            command_name+=("$COMMAND_NAME")
+        done < <(echo "$PREPARED_INPUT" | yq '.[]')
 
         # Waiting until all commands finished
         for i in "${!pids[@]}"; do
-          if ! wait "${pids[$i]}"; then
+            if ! wait "${pids[$i]}"; then
             errors+=("${command_name[$i]}")
-          fi
+            fi
         done
 
         # Checks if there are errors
         if [ ${#errors[@]} -ne 0 ]; then
-          echo "Errors occurred in the following steps:"
-          for error in "${errors[@]}"; do
+            echo "Errors occurred in the following steps:"
+            for error in "${errors[@]}"; do
             echo " - $error"
-          done
-          exit 1
+            done
+            exit 1
         fi
 
         exit 0
+
