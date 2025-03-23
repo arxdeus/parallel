@@ -6,6 +6,8 @@ branding:
   color: blue
 
 inputs:
+  working-directory:
+    type: string
   commands:
     required: true
     type: string
@@ -37,6 +39,8 @@ runs:
         END
         );
         PREPARED_INPUT="-${INPUT#*-}";
+
+        cd ${{ inputs.working-directory }}
 
         # Reading commands
         while IFS=: read -r COMMAND_NAME COMMAND_CALL; do
